@@ -119,19 +119,38 @@ public class MainForm : Form
                 })
             },
             { 1, new Floor(1, "Второй этаж", new Dictionary<string, Room>
-                {
-                    { "Комната3", new Room("Комната3", new Point(100, 100)) },
-                    { "Комната4", new Room("Комната4", new Point(300, 100)) },
-                    { "Лифт", new Room("Лифт", new Point(200, 200)) }
+                 {
+                    { "Лестница1", new Room("Лестница1", new Point(50, 500)) },
+                    { "Кабинет 201", new Room("Кабинет 201", new Point(150, 450)) },
+                    { "Кабинет 202", new Room("Кабинет 202", new Point(250, 400)) },
+                    { "Кабинет 203", new Room("Кабинет 203", new Point(350, 350)) },
+                    { "Кабинет 204", new Room("Кабинет 204", new Point(450, 350)) },
+                    { "Завкафедры", new Room("Завкафедры", new Point(550, 300)) },
+                    { "Кабинет 205", new Room("Кабинет 205", new Point(650, 250)) },
+                    { "Кабинет 206", new Room("Кабинет 206", new Point(750, 200)) },
+                    { "Туалет", new Room("Туалет", new Point(850, 150)) },
+                    { "Кабинет 217", new Room("Кабинет 217", new Point(950, 100)) },
+                    { "Кабинет 218", new Room("Кабинет 218", new Point(1050, 50)) },
+                    { "Лестница2", new Room("Лестница2", new Point(1150, 500)) }
                 },
                 new List<(string, string)>
                 {
-                    ("Комната3", "Комната4"),
-                    ("Комната4", "Лифт"),
-                    ("Лифт", "Комната3")
+                    ("Лестница1", "Кабинет 201"),
+                    ("Кабинет 201", "Кабинет 202"),
+                    ("Кабинет 202", "Кабинет 203"),
+                    ("Кабинет 203", "Кабинет 204"),
+                    ("Кабинет 204", "Завкафедры"),
+                    ("Завкафедры", "Кабинет 205"),
+                    ("Кабинет 205", "Кабинет 206"),
+                    ("Кабинет 206", "Туалет"),
+                    ("Туалет", "Кабинет 217"),
+                    ("Кабинет 217", "Кабинет 218"),
+                    ("Кабинет 218", "Лестница2")
                 })
-            }
-        };
+        }
+
+    };
+        
 
         // Заполнение ComboBox для этажей
         foreach (var floor in floors.Values)
@@ -220,11 +239,14 @@ public class MainForm : Form
         // Отображение маршрута
         if (currentRoute != null && currentRoute.Count > 1)
         {
-            for (int i = 0; i < currentRoute.Count - 1; i++)
+            using (var pen = new Pen(Color.Red, 3)) // Жирная красная линия
             {
-                var start = floor.Rooms[currentRoute[i]].Coordinates;
-                var end = floor.Rooms[currentRoute[i + 1]].Coordinates;
-                g.DrawLine(Pens.Red, start, end);
+                for (int i = 0; i < currentRoute.Count - 1; i++)
+                {
+                    var start = floor.Rooms[currentRoute[i]].Coordinates;
+                    var end = floor.Rooms[currentRoute[i + 1]].Coordinates;
+                    g.DrawLine(pen, start, end);
+                }
             }
         }
     }

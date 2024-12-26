@@ -1,88 +1,142 @@
-﻿using System;
+﻿// Graph.cs
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace INStructed.Services
 {
-    public class Graph<T>
+    /// <summary>
+    /// Шаблонный класс транспортной сети, представляющий граф.
+    /// </summary>
+    /// <typeparam name="TNode">Тип узлов графа.</typeparam>
+    /// <typeparam name="TEdge">Тип рёбер графа (например, вес).</typeparam>
+    public class Graph<TNode, TEdge>
     {
-        private Dictionary<T, List<(T, int)>> _adjacencyList = new Dictionary<T, List<(T, int)>>();
+        /// <summary>
+        /// Список узлов графа.
+        /// </summary>
+        private readonly HashSet<TNode> nodes;
 
-        // Добавление вершины и рёбер
-        public void AddVertex(T vertex)
+        /// <summary>
+        /// Список рёбер графа и их весов.
+        /// </summary>
+        private readonly Dictionary<TNode, List<(TNode Destination, TEdge Edge)>> edges;
+
+        /// <summary>
+        /// Конструктор графа.
+        /// </summary>
+        public Graph()
         {
-            if (!_adjacencyList.ContainsKey(vertex))
+            nodes = new HashSet<TNode>();
+            edges = new Dictionary<TNode, List<(TNode, TEdge)>>();
+        }
+
+        /// <summary>
+        /// Добавляет узел в граф.
+        /// </summary>
+        /// <param name="node">Узел для добавления.</param>
+        public void AddNode(TNode node)
+        {
+            if (!nodes.Contains(node))
             {
-                _adjacencyList[vertex] = new List<(T, int)>();
+                nodes.Add(node);
+                edges[node] = new List<(TNode, TEdge)>();
             }
         }
 
-        public void AddEdge(T vertex1, T vertex2, int weight = 1)
+        /// <summary>
+        /// Добавляет вершину в граф.
+        /// </summary>
+        /// <param name="node">Вершина для добавления.</param>
+        public void AddVertex(TNode node)
         {
-            if (!_adjacencyList.ContainsKey(vertex1))
-                AddVertex(vertex1);
-            if (!_adjacencyList.ContainsKey(vertex2))
-                AddVertex(vertex2);
-
-            _adjacencyList[vertex1].Add((vertex2, weight));
-            _adjacencyList[vertex2].Add((vertex1, weight));  // Граф неориентированный
+            AddNode(node);
         }
 
-        // Алгоритм Дейкстры для нахождения кратчайшего пути
-        public List<T> Dijkstra(T start, T end)
+        /// <summary>
+        /// Добавляет направленное ребро между двумя узлами.
+        /// </summary>
+        /// <param name="source">Начальный узел.</param>
+        /// <param name="destination">Конечный узел.</param>
+        /// <param name="edge">Ребро (например, вес).</param>
+        public void AddEdge(TNode source, TNode destination, TEdge edge)
         {
-            var distances = new Dictionary<T, int>();
-            var previous = new Dictionary<T, T>();
-            var queue = new SortedSet<(int, T)>();
+            if (!nodes.Contains(source) || !nodes.Contains(destination))
+                throw new InvalidOperationException("Оба узла должны существовать в графе.");
 
-            foreach (var vertex in _adjacencyList.Keys)
+            edges[source].Add((destination, edge));
+        }
+
+        /// <summary>
+        /// Находит кратчайший путь между двумя узлами с использованием алгоритма Дейкстры.
+        /// </summary>
+        /// <param name="start">Начальный узел.</param>
+        /// <param name="end">Конечный узел.</param>
+        /// <param name="getWeight">Функция для получения веса из ребра.</param>
+        /// <returns>Список узлов, представляющий кратчайший путь.</returns>
+        public List<TNode> FindShortestPath(TNode start, TNode end, Func<TEdge, double> getWeight)
+        {
+            var distances = nodes.ToDictionary(node => node, node => double.PositiveInfinity);
+            var previous = new Dictionary<TNode, TNode>();
+            var priorityQueue = new SortedSet<(double, TNode)>(Comparer<(double, TNode)>.Create((a, b) =>
             {
-                distances[vertex] = int.MaxValue;
-                previous[vertex] = default;
-                queue.Add((distances[vertex], vertex));
-            }
+                int compare = a.Item1.CompareTo(b.Item1);
+                if (compare != 0) return compare;
+                return Comparer<TNode>.Default.Compare(a.Item2, b.Item2);
+            }));
 
             distances[start] = 0;
-            queue.Add((0, start));
+            priorityQueue.Add((0, start));
 
-            while (queue.Count > 0)
+            while (priorityQueue.Count > 0)
             {
-                var current = queue.Min.Item2;
-                queue.Remove(queue.Min);
+                var current = priorityQueue.Min;
+                priorityQueue.Remove(current);
 
-                if (EqualityComparer<T>.Default.Equals(current, end))
-                {
+                double currentDistance = current.Item1;
+                TNode currentNode = current.Item2;
+
+                if (currentNode.Equals(end))
                     break;
-                }
 
-                foreach (var neighbor in _adjacencyList[current])
+                foreach (var (neighbor, edge) in edges[currentNode])
                 {
-                    var alt = distances[current] + neighbor.Item2;
-                    if (alt < distances[neighbor.Item1])
-                    {
-                        if (queue.Contains((distances[neighbor.Item1], neighbor.Item1)))
-                            queue.Remove((distances[neighbor.Item1], neighbor.Item1));
+                    double weight = getWeight(edge);
+                    double distance = currentDistance + weight;
 
-                        distances[neighbor.Item1] = alt;
-                        previous[neighbor.Item1] = current;
-                        queue.Add((distances[neighbor.Item1], neighbor.Item1));
+                    if (distance < distances[neighbor])
+                    {
+                        var existing = (distances[neighbor], neighbor);
+                        if (priorityQueue.Contains(existing))
+                        {
+                            priorityQueue.Remove(existing);
+                        }
+
+                        distances[neighbor] = distance;
+                        previous[neighbor] = currentNode;
+                        priorityQueue.Add((distance, neighbor));
                     }
                 }
             }
 
-            // Восстановление пути
-            var path = new List<T>();
-            if (!previous.ContainsKey(end) && !EqualityComparer<T>.Default.Equals(end, default(T)))
-                return path; // Маршрут не найден
-
-            for (T at = end; !EqualityComparer<T>.Default.Equals(at, default(T)); at = previous[at])
+            var path = new List<TNode>();
+            var at = end;
+            if (previous.ContainsKey(at) || at.Equals(start))
             {
-                path.Insert(0, at);
-                if (EqualityComparer<T>.Default.Equals(previous[at], at))
-                    break; // Предотвращаем циклы
+                while (!at.Equals(default(TNode)) && previous.ContainsKey(at))
+                {
+                    path.Add(at);
+                    at = previous[at];
+                }
+
+                if (at.Equals(start))
+                {
+                    path.Add(start);
+                    path.Reverse();
+                }
             }
 
-            return path;
+            return path.FirstOrDefault()?.Equals(start) == true ? path : new List<TNode>();
         }
-
     }
 }

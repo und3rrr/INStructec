@@ -1,19 +1,26 @@
 ﻿using INStructed.Interfaces;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace INStructed.Models
 {
-    public class Room : IRoom
+    public class Room : IComparable<Room>
     {
-        public string Name { get; }
-        public Point Coordinates { get; }
-        public int FloorId { get; } // Добавили свойство FloorId
+        [JsonProperty("name")]
+        public string Name { get; set; }
 
-        public Room(string name, Point coordinates, int floorId)
+        [JsonProperty("floorId")]
+        public int FloorId { get; set; }
+
+        [JsonProperty("coordinates")]
+        [JsonConverter(typeof(INStructed.Services.PointConverter))]
+        public Point Coordinates { get; set; }
+
+        public int CompareTo(Room other)
         {
-            Name = name;
-            Coordinates = coordinates;
-            FloorId = floorId; // Инициализируем FloorId
+            return string.Compare(this.Name, other.Name, StringComparison.Ordinal);
         }
     }
 }

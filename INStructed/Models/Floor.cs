@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using INStructed.Interfaces;
+using System.Collections.Generic;
 
 namespace INStructed.Models
 {

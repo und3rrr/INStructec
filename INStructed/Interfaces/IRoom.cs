@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using INStructed.Interfaces;
+using System.Drawing;
 
 namespace INStructed.Interfaces
 {
@@ -6,5 +7,6 @@ namespace INStructed.Interfaces
     {
         string Name { get; }
         Point Coordinates { get; }
+        int FloorId { get; } // Добавили свойство FloorId
     }
 }

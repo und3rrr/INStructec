@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 
-namespace INStructed.Services
+namespace INStructed.Models
 {
     public class MapRenderer : IMapRenderer
     {
@@ -18,8 +18,8 @@ namespace INStructed.Services
             // Рисуем линии между комнатами
             foreach (var room in roomCoordinates)
             {
-                if (roomCoordinates.ContainsKey("Wardrobe"))
-                    g.DrawLine(Pens.Black, room.Value, roomCoordinates["Wardrobe"]);
+                if (roomCoordinates.ContainsKey("Гардероб"))
+                    g.DrawLine(Pens.Black, room.Value, roomCoordinates["Гардероб"]);
             }
 
             // Рисуем маршрут

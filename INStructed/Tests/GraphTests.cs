@@ -1,69 +1,77 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using INStructed.Services;
 using Xunit;
 
-namespace INStructed.Tests
+namespace INStructed.Services.Tests
 {
     public class GraphTests
     {
-        [Fact]
-        public void Test_AddVertex_AddsVertexToGraph()
+        private Graph<string, int> graph;
+
+        public GraphTests()
         {
-            // Arrange
-            var graph = new Graph<string>();
-
-            // Act
-            graph.AddVertex("A");
-
-            // Assert
-            var result = graph.Dijkstra("A", "A");
-            Assert.Single(result);
-            Assert.Equal("A", result[0]);
+            graph = new Graph<string, int>();
         }
 
         [Fact]
-        public void Test_AddEdge_CreatesConnectionBetweenVertices()
+        public void AddNode_ShouldAddNode()
         {
-            // Arrange
-            var graph = new Graph<string>();
+            graph.AddNode("A");
+            var path = graph.FindShortestPath("A", "B", edge => edge);
 
-            // Act
+            Assert.Empty(path); // Путь должен быть пустым, так как узел "B" не добавлен
+        }
+
+        [Fact]
+        public void AddEdge_ShouldAddEdge()
+        {
+            graph.AddNode("A");
+            graph.AddNode("B");
             graph.AddEdge("A", "B", 5);
 
-            // Assert
-            var path = graph.Dijkstra("A", "B");
-            Assert.Equal(new List<string> { "A", "B" }, path);
+            var path = graph.FindShortestPath("A", "B", edge => edge);
+            Assert.Equal(2, path.Count); // Путь должен содержать 2 узла: "A" и "B"
+            Assert.Equal("A", path[0]);
+            Assert.Equal("B", path[1]);
         }
 
         [Fact]
-        public void Test_Dijkstra_FindsShortestPath()
+        public void AddEdge_ShouldThrowException_WhenNodesDoNotExist()
         {
-            // Arrange
-            var graph = new Graph<string>();
+            graph.AddNode("A");
+            var exception = Assert.Throws<InvalidOperationException>(() => graph.AddEdge("A", "B", 5));
+            Assert.Equal("Оба узла должны существовать в графе.", exception.Message);
+        }
+
+        [Fact]
+        public void FindShortestPath_ShouldReturnCorrectPath()
+        {
+            graph.AddNode("A");
+            graph.AddNode("B");
+            graph.AddNode("C");
             graph.AddEdge("A", "B", 1);
             graph.AddEdge("B", "C", 2);
-            graph.AddEdge("A", "C", 5);
+            graph.AddEdge("A", "C", 4);
 
-            // Act
-            var path = graph.Dijkstra("A", "C");
-
-            // Assert
-            Assert.Equal(new List<string> { "A", "B", "C" }, path);
+            var path = graph.FindShortestPath("A", "C", edge => edge);
+            Assert.Equal(3, path.Count); // Теперь путь должен содержать 3 узла: "A", "B", и "C"
+            Assert.Equal("A", path[0]);
+            Assert.Equal("B", path[1]);
+            Assert.Equal("C", path[2]);
         }
 
         [Fact]
-        public void Test_Dijkstra_ReturnsEmptyPathForDisconnectedGraph()
+        public void FindShortestPath_ShouldReturnEmptyList_WhenNoPathExists()
         {
-            // Arrange
-            var graph = new Graph<string>();
-            graph.AddVertex("A");
-            graph.AddVertex("B");
+            graph.AddNode("A");
+            graph.AddNode("B");
+            graph.AddNode("C");
+            graph.AddEdge("A", "B", 1);
+            // Нет ребер к "C"
 
-            // Act
-            var path = graph.Dijkstra("A", "B");
-
-            // Assert
-            Assert.Empty(path);
+            var path = graph.FindShortestPath("A", "C", edge => edge);
+            Assert.Empty(path); // Путь должен быть пустым, так как нет пути от "A" к "C"
         }
     }
 }

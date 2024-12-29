@@ -49,7 +49,6 @@ public partial class MainForm : System.Windows.Forms.Form
     private Button btnCancelSelection;
     private Point lastMouseMapPosition;
 
-
     public MainForm()
     {
         InitializeComponent();

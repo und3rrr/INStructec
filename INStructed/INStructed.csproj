@@ -88,7 +88,9 @@
     <Compile Include="Models\RouteFInder.cs" />
     <Compile Include="Services\BuildingEditorService.cs" />
     <Compile Include="Services\PointConverter.cs" />
+    <Compile Include="Services\PriorityQueue.cs" />
     <Compile Include="Tests\GraphTests.cs" />
+    <Compile Include="Tests\RouteFinderTests.cs" />
     <Compile Include="Views\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

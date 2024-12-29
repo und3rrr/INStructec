@@ -76,67 +76,95 @@ namespace INStructed.Services
         /// <returns>Список узлов, представляющий кратчайший путь.</returns>
         public List<TNode> FindShortestPath(TNode start, TNode end, Func<TEdge, double> getWeight)
         {
+            // Инициализация расстояний до всех узлов как бесконечность
             var distances = nodes.ToDictionary(node => node, node => double.PositiveInfinity);
-            var previous = new Dictionary<TNode, TNode>();
-            var priorityQueue = new SortedSet<(double, TNode)>(Comparer<(double, TNode)>.Create((a, b) =>
-            {
-                int compare = a.Item1.CompareTo(b.Item1);
-                if (compare != 0) return compare;
-                return Comparer<TNode>.Default.Compare(a.Item2, b.Item2);
-            }));
-
             distances[start] = 0;
-            priorityQueue.Add((0, start));
 
-            while (priorityQueue.Count > 0)
+            // Словарь для отслеживания предыдущих узлов на пути
+            var previous = new Dictionary<TNode, TNode>();
+
+            // Инициализация приоритетной очереди
+            var priorityQueue = new PriorityQueue<TNode, double>();
+            priorityQueue.Enqueue(start, 0);
+
+            // Множество посещённых узлов
+            var visited = new HashSet<TNode>();
+
+            while (!priorityQueue.IsEmpty)
             {
-                var current = priorityQueue.Min;
-                priorityQueue.Remove(current);
+                // Извлекаем узел с минимальным расстоянием
+                var currentNode = priorityQueue.Dequeue();
 
-                double currentDistance = current.Item1;
-                TNode currentNode = current.Item2;
+                // Если узел уже посещён, пропускаем
+                if (visited.Contains(currentNode))
+                    continue;
 
-                if (currentNode.Equals(end))
+                // Помечаем узел как посещённый
+                visited.Add(currentNode);
+
+                // Если достигли конечного узла, выходим из цикла
+                if (EqualityComparer<TNode>.Default.Equals(currentNode, end))
                     break;
 
+                // Проходим по всем соседям текущего узла
                 foreach (var (neighbor, edge) in edges[currentNode])
                 {
                     double weight = getWeight(edge);
-                    double distance = currentDistance + weight;
+                    double distance = distances[currentNode] + weight;
 
+                    // Если найдено более короткое расстояние до соседа
                     if (distance < distances[neighbor])
                     {
-                        var existing = (distances[neighbor], neighbor);
-                        if (priorityQueue.Contains(existing))
-                        {
-                            priorityQueue.Remove(existing);
-                        }
-
                         distances[neighbor] = distance;
                         previous[neighbor] = currentNode;
-                        priorityQueue.Add((distance, neighbor));
+                        priorityQueue.Enqueue(neighbor, distance);
                     }
                 }
             }
 
+            // Восстанавливаем путь от конца к началу
             var path = new List<TNode>();
             var at = end;
-            if (previous.ContainsKey(at) || at.Equals(start))
+
+            if (previous.ContainsKey(at) || EqualityComparer<TNode>.Default.Equals(at, start))
             {
-                while (!at.Equals(default(TNode)) && previous.ContainsKey(at))
+                while (!EqualityComparer<TNode>.Default.Equals(at, default(TNode)) && previous.ContainsKey(at))
                 {
                     path.Add(at);
                     at = previous[at];
                 }
 
-                if (at.Equals(start))
+                // Добавляем начальный узел и переворачиваем путь
+                if (EqualityComparer<TNode>.Default.Equals(at, start))
                 {
                     path.Add(start);
                     path.Reverse();
                 }
             }
 
+            // Проверяем, начинается ли путь с начального узла
             return path.FirstOrDefault()?.Equals(start) == true ? path : new List<TNode>();
+        }
+
+        /// <summary>
+        /// Получает вес рёбра между двумя узлами.
+        /// </summary>
+        /// <param name="source">Исходный узел.</param>
+        /// <param name="destination">Конечный узел.</param>
+        /// <returns>Вес рёбра.</returns>
+        public TEdge GetEdgeWeight(TNode source, TNode destination)
+        {
+            if (edges.TryGetValue(source, out var neighbors))
+            {
+                foreach (var (dest, edge) in neighbors)
+                {
+                    if (EqualityComparer<TNode>.Default.Equals(dest, destination))
+                    {
+                        return edge;
+                    }
+                }
+            }
+            throw new InvalidOperationException($"Ребро от {source} до {destination} не существует.");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿﻿using INStructed.Interfaces;
+﻿// RouteFinder.cs
+using INStructed.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,6 +16,10 @@ namespace INStructed.Services
 
         public List<string> FindShortestPath(string start, string end)
         {
+            // Проверка существования начальной и конечной комнат
+            if (!_graph.ContainsKey(start) || !_graph.ContainsKey(end))
+                return null;
+
             var distances = new Dictionary<string, int>();
             var previous = new Dictionary<string, string>();
             var unvisited = new HashSet<string>(_graph.Keys);
@@ -25,31 +30,36 @@ namespace INStructed.Services
             }
             distances[start] = 0;
 
-            while (unvisited.Count > 0)
-            {
-                var current = unvisited.OrderBy(v => distances[v]).First();
-                unvisited.Remove(current);
+            var priorityQueue = new PriorityQueue<string, int>();
+            priorityQueue.Enqueue(start, 0);
 
-                if (current == end)
+            while (!priorityQueue.IsEmpty)
+            {
+                var currentNode = priorityQueue.Dequeue();
+
+                if (currentNode == end)
                 {
                     var path = new List<string>();
-                    while (current != null)
+                    while (currentNode != null)
                     {
-                        path.Insert(0, current);
-                        previous.TryGetValue(current, out current);
+                        path.Insert(0, currentNode);
+                        previous.TryGetValue(currentNode, out currentNode);
                     }
                     return path;
                 }
 
-                foreach (var (neighbor, weight) in _graph[current])
+                unvisited.Remove(currentNode);
+
+                foreach (var (neighbor, weight) in _graph[currentNode])
                 {
                     if (!unvisited.Contains(neighbor)) continue;
 
-                    int newDist = distances[current] + weight;
+                    int newDist = distances[currentNode] + weight;
                     if (newDist < distances[neighbor])
                     {
                         distances[neighbor] = newDist;
-                        previous[neighbor] = current;
+                        previous[neighbor] = currentNode;
+                        priorityQueue.Enqueue(neighbor, newDist);
                     }
                 }
             }
